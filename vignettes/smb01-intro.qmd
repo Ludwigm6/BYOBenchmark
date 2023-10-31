@@ -1,0 +1,139 @@
+---
+title: "smb - The Spatial Modelling Benchmark Dataset"
+format: html
+author: Marvin Ludwig
+---
+
+```{r setup}
+# vigentte setup, can be removed once package is build
+
+# source all package functions
+lapply(list.files(path = "R/", full.names = TRUE, pattern = ".R$"), source)
+
+
+# load needed package data
+source("data-raw/create_sysdata.R")
+```
+
+
+
+
+```{r}
+# setup variables
+
+y = 2022
+m = 6
+p = "/home/marvin/temp"
+
+```
+
+
+
+```{r}
+# DWD weather data
+
+dwd_data = dwd_multi(year = y,
+                     month = m,
+                     path = p)
+terra::plot(dwd_data)
+
+# Topography from package geodata
+topo_data = topography(path = p)
+terra::plot(topo_data)
+
+
+# MODIS NDVI as response
+
+modis_data = modis_single(year = y, month = m, path = p)
+terra::plot(modis_data)
+```
+
+
+## Wrapper around all previous functions
+
+```{r}
+benchmark = get_smb(year = 2022, month = 6, path = p)
+names(benchmark)
+```
+
+
+
+
+
+```{r}
+train_sample = spampling(benchmark, "random", size = 1000, seed = 5)
+```
+
+
+
+# Modelling
+
+
+```{r}
+## TODO
+# data(smb) 
+
+library(caret)
+library(ranger)
+library(ggplot2)
+library(tmap)
+
+model = train(NDVI_2022_06 ~ ., data = train_sample,
+              method = "ranger",
+              num.trees = 100,
+              trControl = trainControl(method = "cv"))
+
+model
+```
+
+
+
+## Validation possibility
+
+```{r}
+
+prediction = terra::predict(benchmark, model, na.rm = TRUE)
+names(prediction) = "prediction"
+
+prediction_difference = modis_data - prediction
+```
+
+
+```{r}
+#| layout-ncol: 3
+tm_shape(modis_data)+
+  tm_raster(title = "NDVI 2022 06",  style = "cont", breaks = c(-0.2, 0, 0.2, 0.4, 0.6, 0.8, 1))+
+  tm_layout(frame = FALSE)
+
+tm_shape(prediction)+
+  tm_raster(title = "Prediction", style = "cont", breaks = c(-0.2, 0, 0.2, 0.4, 0.6, 0.8, 1), midpoint = 0)+
+  tm_layout(frame = FALSE)
+
+tm_shape(prediction_difference)+
+  tm_raster(style = "cont", title = "Truth - Prediction")+
+  tm_layout(frame = FALSE)
+```
+
+
+```{r}
+terra::hist(prediction - modis_data)
+
+validation_stack = c(benchmark$NDVI_2022_06, prediction)
+validation = as.data.frame(validation_stack, na.rm = TRUE)
+
+
+ggplot(validation, aes(NDVI_2022_06, prediction))+
+  geom_hex()+
+  scale_fill_viridis_c(trans = "log10")+
+  geom_abline(slope = 1, intercept = 0, color = "red")+
+  coord_equal()
+
+
+Metrics::rmse(validation$NDVI_2022_06, validation$prediction)
+
+```
+
+
+
+
+

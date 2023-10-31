@@ -1,0 +1,77 @@
+---
+title: "smb - Example: AOA comparison from random CV and knndm CV"
+format: html
+---
+
+```{r setup}
+# vignette setup, can be removed once package is build
+
+library(sf)
+library(terra)
+library(geodata)
+
+# source all package functions
+lapply(list.files(path = "R/", full.names = TRUE, pattern = ".R$"), source)
+
+
+# load needed package data
+source("data-raw/create_sysdata.R")
+```
+
+```{r}
+benchmark = get_smb(year = 2022, month = 6, path = "/home/marvin/temp")
+
+train_sample = spampling(benchmark, method = "clustered", size = 1000, cluster = 5, radius = 25000)
+```
+
+
+## CV Comparison
+
+
+```{r}
+library(CAST)
+library(caret)
+
+
+model_random = train(NDVI_2022_06 ~ ., data = st_drop_geometry(train_sample),
+                     method = "ranger",
+                     num.trees = 100,
+                     importance = "impurity",
+                     trControl = trainControl(method = "cv",
+                                              savePredictions = "final"))
+
+global_validation(model_random)
+
+
+
+knndm_setup = CAST::knndm(train_sample, modeldomain = st_transform(germany_outline, st_crs(train_sample)))
+
+model_knndm = train(NDVI_2022_06 ~ ., data = st_drop_geometry(train_sample),
+                    method = "ranger",
+                    num.trees = 100,
+                    importance = "impurity",
+                    trControl = trainControl(method = "cv",
+                                             index = knndm_setup$indx_train,
+                                             indexOut = knndm_setup$indx_test,
+                                              savePredictions = "final"))
+global_validation(model_knndm)
+
+```
+
+
+```{r}
+aoa_random = aoa(newdata = benchmark, model = model_random)
+
+
+aoa_knndm = aoa(newdata = benchmark, model = model_knndm)
+```
+
+
+```{r}
+#| layout-ncol: 2
+
+plot(aoa_random$AOA)
+plot(aoa_knndm$AOA)
+```
+
+

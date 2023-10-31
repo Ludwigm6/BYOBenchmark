@@ -1,0 +1,14 @@
+Package: smb
+Type: Package
+Title: smb - Spatial Modelling Benchmark
+Version: 0.1.0
+Author: Marvin Ludwig, Jan Linnenbrink
+Maintainer: Marvin Ludwig <mlspatial@gmail.com>
+Description: smb downloads and homogenizes various spatial dataset for
+    testing and developing methods 
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 4.1.0)
+Imports: geodata, terra, sf
+RoxygenNote: 7.2.3
