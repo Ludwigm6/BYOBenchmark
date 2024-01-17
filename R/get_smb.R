@@ -14,11 +14,14 @@
 
 get_smb = function(year, month, path){
 
-  weather = dwd_multi(year, month, path = path)
+  weather = weather(year, month, path = path)
   topo = topography(path = path)
-  response = modis_single(year, month, path)
+  grassland = landcover_single(year = 2018, product = "GRA", path = path)
+  forest = landcover_single(year = 2018, product = "TCD", path = path)
+  urban = landcover_single(year = 2018, product = "IMD", path = path)
+  response = modis_single(year, month, product = "MODISNDVI", path)
 
-  benchmark = c(weather, topo, response)
+  benchmark = c(weather, topo, grassland, forest, urban, response)
 
   return(benchmark)
 

@@ -1,0 +1,53 @@
+---
+title: "smb - Simulation of transferability scenarios"
+format: html
+---
+
+```{r setup}
+# vignette setup, can be removed once package is build
+library(sf)
+library(terra)
+
+# library(smb)
+
+# source all package functions
+lapply(list.files(path = "R/", full.names = TRUE, pattern = ".R$"), source)
+
+
+# load needed package data
+source("data-raw/create_sysdata.R")
+```
+
+
+
+# Initialze Benchmark Dataset
+
+```{r}
+benchmark = get_smb(year = 2022, month = 6, path = "/home/marvin/temp")
+```
+
+
+# Simulate Prior Shift
+
+
+Show that prior shift is much more likely if clustered sample is used
+
+1. Show on real world data -> not generalized enough because it is "Germany Specific"
+2. Create Simulated dataset to confirm assumption
+
+
+
+```{r}
+
+hist(benchmark$MODISNDVI_2022_06)
+
+plot(benchmark$MODISNDVI_2022_06 > 0.8)
+
+```
+
+
+
+
+
+
+

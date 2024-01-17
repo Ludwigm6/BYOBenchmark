@@ -13,6 +13,10 @@ topography = function(...){
   elev = terra::project(elev, raster_template)
 
   elev = c(elev, terra::terrain(elev, c("slope", "aspect", "TPI", "TRI")))
+
+  elev$northness <- cos(elev$aspect * pi / 180)
+  elev$eastness <- sin(elev$aspect * pi / 180)
+
   return(elev)
 
 }

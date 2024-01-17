@@ -7,11 +7,12 @@
 #' @export
 
 
-dwd_multi <- function(year, month,
-                            variable = c("air_temperature_max", "air_temperature_mean", "air_temperature_min",
-                                                      "drought_index", "evapo_p", "evapo_r", "precipitation",
-                                                      "soil_moist", "soil_temperature_5cm", "sunshine_duration"),
-                            path){
+weather <- function(year,
+                    month,
+                    variable = c("air_temperature_max", "air_temperature_mean", "air_temperature_min",
+                                 "drought_index", "evapo_p", "evapo_r", "precipitation",
+                                 "soil_moist", "soil_temperature_5cm", "sunshine_duration"),
+                    path){
 
 
   dwd_stack = lapply(variable, function(x){

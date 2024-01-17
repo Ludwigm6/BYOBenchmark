@@ -1,6 +1,6 @@
-Package: smb
+Package: bench
 Type: Package
-Title: smb - Spatial Modelling Benchmark
+Title: bench - Spatial Modelling Benchmark
 Version: 0.1.0
 Author: Marvin Ludwig, Jan Linnenbrink
 Maintainer: Marvin Ludwig <mlspatial@gmail.com>

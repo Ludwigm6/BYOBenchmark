@@ -5,7 +5,11 @@ author: Marvin Ludwig
 ---
 
 ```{r setup}
-# vigentte setup, can be removed once package is build
+library(terra)
+library(sf)
+# library(smb)
+
+# vignette setup, can be removed once package is build
 
 # source all package functions
 lapply(list.files(path = "R/", full.names = TRUE, pattern = ".R$"), source)
@@ -16,6 +20,26 @@ source("data-raw/create_sysdata.R")
 ```
 
 
+## Study Area
+
+The study area is Germany with a negative buffer of 10km. We do this to negate effects of the coastline, islands and borders. Every spatial variable is masked with this layer.
+
+```{r}
+terra::plot(raster_template)
+```
+
+The total amount of valid pixels is
+
+```{r}
+terra::values(raster_template) |> 
+  sum(na.rm = TRUE)
+```
+
+
+
+## Environmental Data
+
+With the package, you can download environmentally meaningful raster data, e.g. weather data from the DWD.
 
 
 ```{r}
@@ -32,9 +56,9 @@ p = "/home/marvin/temp"
 ```{r}
 # DWD weather data
 
-dwd_data = dwd_multi(year = y,
-                     month = m,
-                     path = p)
+dwd_data = weather(year = y,
+                   month = m,
+                   path = p)
 terra::plot(dwd_data)
 
 # Topography from package geodata
@@ -42,14 +66,13 @@ topo_data = topography(path = p)
 terra::plot(topo_data)
 
 
-# MODIS NDVI as response
-
-modis_data = modis_single(year = y, month = m, path = p)
+# MODIS NDVI
+modis_data = modis_single(product = "NDVI", year = y, month = m, path = p)
 terra::plot(modis_data)
 ```
 
 
-## Wrapper around all previous functions
+#### Wrapper around all previous functions
 
 ```{r}
 benchmark = get_smb(year = 2022, month = 6, path = p)
@@ -58,15 +81,76 @@ names(benchmark)
 
 
 
+## Simulated Data
+
+
+### Random Noise
+
+Method and model development often requires experimental setups with known outcomes. For this, simulated data is often more suitable than real world data.
 
 
 ```{r}
-train_sample = spampling(benchmark, "random", size = 1000, seed = 5)
+#| layout-nrow: 3
+n_uni = noise() # runif is the default
+plot(n_uni)
+hist(n_uni)
+
+n_norm = noise(rnorm)
+plot(n_norm)
+hist(n_norm)
+
+n_lnorm = noise(rlnorm)
+plot(n_lnorm)
+hist(n_lnorm)
+```
+
+
+### Spatial Proxies
+
+Spatial Proxies are ... (see Mila 2024)
+
+
+
+```{r}
+p_x = spatial_proxy("x")
+p_y = spatial_proxy("y")
+
+plot(p_x)
+plot(p_y)
 ```
 
 
 
-# Modelling
+
+## Spatial Sampling Designs
+
+```{r}
+random_sample = spampling("random", size = 1000, seed = 5)
+plot(random_sample[,"cell"])
+
+clustered_sample = spampling("clustered", size = 500, cluster = 10)
+plot(germany_outline)
+plot(clustered_sample[,"cluster"], add = TRUE)
+```
+
+
+If you give the function the benchmark stack, features at the point location will be extracted.
+
+```{r}
+clustered_feature = spampling("clustered", size = 500, cluster = 10, benchmark = benchmark)
+head(clustered_feature)
+```
+
+
+
+
+
+
+## Analysis and Use Cases
+
+
+
+## Modelling
 
 
 ```{r}
@@ -88,50 +172,6 @@ model
 
 
 
-## Validation possibility
-
-```{r}
-
-prediction = terra::predict(benchmark, model, na.rm = TRUE)
-names(prediction) = "prediction"
-
-prediction_difference = modis_data - prediction
-```
-
-
-```{r}
-#| layout-ncol: 3
-tm_shape(modis_data)+
-  tm_raster(title = "NDVI 2022 06",  style = "cont", breaks = c(-0.2, 0, 0.2, 0.4, 0.6, 0.8, 1))+
-  tm_layout(frame = FALSE)
-
-tm_shape(prediction)+
-  tm_raster(title = "Prediction", style = "cont", breaks = c(-0.2, 0, 0.2, 0.4, 0.6, 0.8, 1), midpoint = 0)+
-  tm_layout(frame = FALSE)
-
-tm_shape(prediction_difference)+
-  tm_raster(style = "cont", title = "Truth - Prediction")+
-  tm_layout(frame = FALSE)
-```
-
-
-```{r}
-terra::hist(prediction - modis_data)
-
-validation_stack = c(benchmark$NDVI_2022_06, prediction)
-validation = as.data.frame(validation_stack, na.rm = TRUE)
-
-
-ggplot(validation, aes(NDVI_2022_06, prediction))+
-  geom_hex()+
-  scale_fill_viridis_c(trans = "log10")+
-  geom_abline(slope = 1, intercept = 0, color = "red")+
-  coord_equal()
-
-
-Metrics::rmse(validation$NDVI_2022_06, validation$prediction)
-
-```
 
 
 
